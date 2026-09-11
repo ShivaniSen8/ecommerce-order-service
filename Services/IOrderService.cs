@@ -5,13 +5,21 @@ namespace OrderService.Services;
 public interface IOrderService
 {
     Task<OrderResponse> CreateOrderAsync(
-        Guid userId,
+        int userId,
         CreateOrderRequest request);
+
+    Task<List<OrderResponse>> GetUserOrdersAsync(
+        int userId);
 
     Task<OrderResponse?> GetOrderByIdAsync(
         Guid orderId,
-        Guid userId);
+        int userId);
 
-    Task<List<OrderResponse>> GetUserOrdersAsync(
-        Guid userId);
+    Task<OrderResponse?> CancelOrderAsync(
+        Guid orderId,
+        int userId);
+
+    Task<OrderResponse?> UpdateOrderStatusAsync(
+        Guid orderId,
+        string status);
 }

@@ -19,22 +19,16 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
+    // POST: api/orders
     [HttpPost]
-    public async Task<IActionResult> CreateOrder(
-        [FromBody] CreateOrderRequest request)
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
-        var userId = GetUserId();
 
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
+        var userId = GetUserId();
 
         try
         {
-            var order = await _orderService.CreateOrderAsync(
-                userId.Value,
-                request);
+            var order = await _orderService.CreateOrderAsync(userId, request);
 
             return CreatedAtAction(
                 nameof(GetOrderById),
@@ -50,35 +44,24 @@ public class OrdersController : ControllerBase
         }
     }
 
+    // GET: api/orders
     [HttpGet]
     public async Task<IActionResult> GetMyOrders()
     {
         var userId = GetUserId();
 
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
-
-        var orders = await _orderService.GetUserOrdersAsync(
-            userId.Value);
+        var orders = await _orderService.GetUserOrdersAsync(userId);
 
         return Ok(orders);
     }
 
+    // GET: api/orders/{orderId}
     [HttpGet("{orderId:guid}")]
     public async Task<IActionResult> GetOrderById(Guid orderId)
     {
         var userId = GetUserId();
 
-        if (userId == null)
-        {
-            return Unauthorized();
-        }
-
-        var order = await _orderService.GetOrderByIdAsync(
-            orderId,
-            userId.Value);
+        var order = await _orderService.GetOrderByIdAsync(orderId, userId);
 
         if (order == null)
         {
@@ -91,10 +74,70 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
-    private Guid? GetUserId()
+    // POST: api/orders/{orderId}/cancel
+    [HttpPost("{orderId:guid}/cancel")]
+    public async Task<IActionResult> CancelOrder(Guid orderId)
     {
-        var userIdClaim = User.FindFirst(
-            ClaimTypes.NameIdentifier);
+        var userId = GetUserId();
+
+        try
+        {
+            var order = await _orderService.CancelOrderAsync(orderId, userId);
+
+            if (order == null)
+            {
+                return NotFound(new
+                {
+                    message = "Order not found."
+                });
+            }
+
+            return Ok(order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    // PUT: api/orders/{orderId}/status
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{orderId:guid}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(
+        Guid orderId,
+        [FromBody] UpdateOrderStatusRequest request)
+    {
+        try
+        {
+            var order = await _orderService.UpdateOrderStatusAsync(
+                orderId,
+                request.Status);
+
+            if (order == null)
+            {
+                return NotFound(new
+                {
+                    message = "Order not found."
+                });
+            }
+
+            return Ok(order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
         if (userIdClaim == null)
         {
@@ -103,14 +146,16 @@ public class OrdersController : ControllerBase
 
         if (userIdClaim == null)
         {
-            return null;
+            throw new UnauthorizedAccessException(
+                "User ID claim was not found.");
         }
 
-        return Guid.TryParse(
-            userIdClaim.Value,
-            out var userId)
-            ? userId
-            : null;
+        if (!int.TryParse(userIdClaim.Value, out var userId))
+        {
+            throw new UnauthorizedAccessException(
+            $"User ID claim is not a valid integer. Value: {userIdClaim.Value}");
+        }
+
+        return userId;
     }
 }
-

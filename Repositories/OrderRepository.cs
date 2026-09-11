@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
-using OrderService.Models;
+using OrderService.Entities;
 
 namespace OrderService.Repositories;
 
@@ -29,7 +29,7 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<List<Order>> GetByUserIdAsync(Guid userId)
+    public async Task<List<Order>> GetByUserIdAsync(int userId)
     {
         return await _context.Orders
             .Include(x => x.OrderItems)

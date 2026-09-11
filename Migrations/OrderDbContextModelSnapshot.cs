@@ -22,7 +22,7 @@ namespace OrderService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("OrderService.Models.Order", b =>
+            modelBuilder.Entity("OrderService.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,6 +30,10 @@ namespace OrderService.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("ShippingAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -39,18 +43,18 @@ namespace OrderService.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("OrderService.Models.OrderItem", b =>
+            modelBuilder.Entity("OrderService.Entities.OrderItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -80,9 +84,9 @@ namespace OrderService.Migrations
                     b.ToTable("OrderItems");
                 });
 
-            modelBuilder.Entity("OrderService.Models.OrderItem", b =>
+            modelBuilder.Entity("OrderService.Entities.OrderItem", b =>
                 {
-                    b.HasOne("OrderService.Models.Order", "Order")
+                    b.HasOne("OrderService.Entities.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -91,7 +95,7 @@ namespace OrderService.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("OrderService.Models.Order", b =>
+            modelBuilder.Entity("OrderService.Entities.Order", b =>
                 {
                     b.Navigation("OrderItems");
                 });
