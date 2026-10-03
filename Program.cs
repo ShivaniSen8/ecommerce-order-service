@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
 using OrderService.Repositories;
@@ -46,6 +48,27 @@ builder.Services.AddAuthorization(options =>
     });
 });
 var app = builder.Build();
+
+app.Use(async (context, next) =>
+{
+    var activity = Activity.Current;
+    var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
+    var spanId = activity?.SpanId.ToString() ?? context.TraceIdentifier;
+
+    context.Response.Headers["X-Trace-ID"] = traceId;
+    context.Response.Headers["X-Span-ID"] = spanId;
+
+    using (app.Logger.BeginScope(new Dictionary<string, object>
+    {
+        ["TraceId"] = traceId,
+        ["SpanId"] = spanId
+    }))
+    {
+        app.Logger.LogInformation("Request started: {Method} {Path} TraceId={TraceId} SpanId={SpanId}", context.Request.Method, context.Request.Path, traceId, spanId);
+        await next();
+        app.Logger.LogInformation("Request finished: {StatusCode} {Method} {Path} TraceId={TraceId} SpanId={SpanId}", context.Response.StatusCode, context.Request.Method, context.Request.Path, traceId, spanId);
+    }
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
