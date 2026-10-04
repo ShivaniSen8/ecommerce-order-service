@@ -190,6 +190,33 @@ public class OrderService : IOrderService
         return MapToResponse(order);
     }
 
+    public async Task<OrderResponse?> ConfirmPaymentAsync(
+        Guid orderId,
+        int userId)
+    {
+        var order = await _orderRepository.GetByIdAsync(orderId);
+        if (order == null || order.UserId != userId)
+        {
+            return null;
+        }
+
+        if (order.Status.Equals("Confirmed", StringComparison.OrdinalIgnoreCase))
+        {
+            return MapToResponse(order);
+        }
+
+        if (!order.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Only pending orders can be confirmed after payment.");
+        }
+
+        order.Status = "Confirmed";
+        order.UpdatedAt = DateTime.UtcNow;
+        await _orderRepository.UpdateAsync(order);
+        return MapToResponse(order);
+    }
+
     private static OrderResponse MapToResponse(Order order)
     {
         return new OrderResponse

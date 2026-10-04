@@ -23,7 +23,6 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
     {
-
         var userId = GetUserId();
 
         try
@@ -72,6 +71,24 @@ public class OrdersController : ControllerBase
         }
 
         return Ok(order);
+    }
+
+    [HttpPost("{orderId:guid}/confirm-payment")]
+    public async Task<IActionResult> ConfirmPayment(Guid orderId)
+    {
+        var userId = GetUserId();
+
+        try
+        {
+            var order = await _orderService.ConfirmPaymentAsync(orderId, userId);
+            return order == null
+                ? NotFound(new { message = "Order not found." })
+                : Ok(order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     // POST: api/orders/{orderId}/cancel

@@ -22,4 +22,6 @@ public interface IOrderService
     Task<OrderResponse?> UpdateOrderStatusAsync(
         Guid orderId,
         string status);
+
+    Task<OrderResponse?> ConfirmPaymentAsync(Guid orderId, int userId);
 }
